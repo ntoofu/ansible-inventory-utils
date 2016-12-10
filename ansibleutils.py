@@ -181,10 +181,3 @@ class VarsComparator(BaseComparator):
                 self.result = self.gt
         return
 
-def _dict_compare(d1, d2):
-    if d1 != d2:
-        if str(d1.keys()) < str(d2.keys()):
-            return -1
-        if str(d1.keys()) > str(d2.keys()):
-            return 1
-    return 0
