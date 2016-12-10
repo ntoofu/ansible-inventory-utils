@@ -2,6 +2,7 @@
 This module defines utilities to handle ansible inventory
 """
 
+
 def load_ansible_inventory(base_dir, inventory_file, vault_pass=None):
     """
     Args:
@@ -19,25 +20,33 @@ def load_ansible_inventory(base_dir, inventory_file, vault_pass=None):
     loader = DataLoader()
     if vault_pass:
         loader.set_vault_password(vault_pass)
-    inventory = Inventory(loader=loader, variable_manager=variable_manager, host_list=inventory_file)
+    inventory = Inventory(loader=loader,
+                          variable_manager=variable_manager,
+                          host_list=inventory_file)
     inventory.set_playbook_basedir(base_dir)
     variable_manager.set_inventory(inventory)
 
     return inventory
 
+
 def diff_ansible_inventory(inventory1, inventory2, debug=False):
     """
     Args:
-        inventory1 (ansible.inventory.Inventory): Ansible inventory compared to the latter one.
-        inventory2 (ansible.inventory.Inventory): Ansible inventory compared to the former one.
+        inventory1 (ansible.inventory.Inventory):
+            Ansible inventory compared to the latter one.
+        inventory2 (ansible.inventory.Inventory):
+            Ansible inventory compared to the former one.
         debug (bool, optional): Output debug information if True
     Returns:
-        bool: True if contents of the given inventories are the same, False otherwise.
+        bool: True if contents of the given inventories are the same,
+            False otherwise.
     """
     comparison = AnsibleComparator(inventory1, inventory2)
     if debug and comparison.result != BaseComparator.eq:
-        print("position: {}\ndifference: {}".format(" -> ".join(comparison.path), comparison.diff))
+        pos_str = " -> ".join(comparison.path)
+        print("position: {}\ndifference: {}".format(pos_str, comparison.diff))
     return comparison.result == BaseComparator.eq
+
 
 class BaseComparator():
     (lt, eq, gt) = (-1, 0, 1)
@@ -60,13 +69,16 @@ class BaseComparator():
             self.path.extend(comparator.path)
         return True if self.result == self.eq else False
 
+
 class AnsibleComparator(BaseComparator):
     """
     Class to compare Ansible inventories.
 
     Args:
-        inventory1 (ansible.inventory.Inventory): Ansible inventory compared to the latter one
-        inventory2 (ansible.inventory.Inventory): Ansible inventory compared to the former one
+        inventory1 (ansible.inventory.Inventory):
+            Ansible inventory compared to the latter one
+        inventory2 (ansible.inventory.Inventory):
+            Ansible inventory compared to the former one
     Attributes:
         result(bool)
         diff(str)
@@ -75,7 +87,9 @@ class AnsibleComparator(BaseComparator):
     def _compare(self):
         i1 = self._obj1
         i2 = self._obj2
-        if self.recurse_compare(ListComparator(GroupComparator, i1.groups.values(), i2.groups.values())) is False:
+        list_comparator = ListComparator(
+                GroupComparator, i1.groups.values(), i2.groups.values())
+        if self.recurse_compare(list_comparator) is False:
             return
         self.result = self.eq
 
@@ -96,33 +110,41 @@ class ListComparator(BaseComparator):
             else:
                 self.result = self.gt
             return
-        sorted1 = sorted(l1, key=self._cmp_to_key(lambda x,y: self._elem_cmp(x,y).result))
-        sorted2 = sorted(l2, key=self._cmp_to_key(lambda x,y: self._elem_cmp(x,y).result))
-        for i in range(0,len(sorted1)):
-            if self.recurse_compare(self._elem_cmp(sorted1[i], sorted2[i])) is False:
+        sort_key = self._cmp_to_key(lambda x, y: self._elem_cmp(x, y).result)
+        sorted1 = sorted(l1, key=sort_key)
+        sorted2 = sorted(l2, key=sort_key)
+        for i in range(0, len(sorted1)):
+            elem_comparator = self._elem_cmp(sorted1[i], sorted2[i])
+            if self.recurse_compare(elem_comparator) is False:
                 return
         self.result = self.eq
         return
 
     @staticmethod
     def _cmp_to_key(mycmp):
-         'Convert a cmp= function into a key= function'
-         class K:
-             def __init__(self, obj, *args):
-                 self.obj = obj
-             def __lt__(self, other):
-                 return mycmp(self.obj, other.obj) < 0
-             def __gt__(self, other):
-                 return mycmp(self.obj, other.obj) > 0
-             def __eq__(self, other):
-                 return mycmp(self.obj, other.obj) == 0
-             def __le__(self, other):
-                 return mycmp(self.obj, other.obj) <= 0
-             def __ge__(self, other):
-                 return mycmp(self.obj, other.obj) >= 0
-             def __ne__(self, other):
-                 return mycmp(self.obj, other.obj) != 0
-         return K
+        'Convert a cmp= function into a key= function'
+        class K:
+            def __init__(self, obj, *args):
+                self.obj = obj
+
+            def __lt__(self, other):
+                return mycmp(self.obj, other.obj) < 0
+
+            def __gt__(self, other):
+                return mycmp(self.obj, other.obj) > 0
+
+            def __eq__(self, other):
+                return mycmp(self.obj, other.obj) == 0
+
+            def __le__(self, other):
+                return mycmp(self.obj, other.obj) <= 0
+
+            def __ge__(self, other):
+                return mycmp(self.obj, other.obj) >= 0
+
+            def __ne__(self, other):
+                return mycmp(self.obj, other.obj) != 0
+        return K
 
 
 class GroupComparator(BaseComparator):
@@ -130,7 +152,7 @@ class GroupComparator(BaseComparator):
         g1 = self._obj1
         g2 = self._obj2
         if g1.name != g2.name:
-            self.diff = (g1.name,g2.name)
+            self.diff = (g1.name, g2.name)
             self.path = ["name"]
             if g1.name < g2.name:
                 self.result = self.lt
@@ -139,23 +161,28 @@ class GroupComparator(BaseComparator):
             return
         self.path = [g1.name]
 
-        if self.recurse_compare(VarsComparator(dict(g1.vars), dict(g2.vars))) is False:
+        vars_comparator = VarsComparator(dict(g1.vars), dict(g2.vars))
+        if self.recurse_compare(vars_comparator) is False:
             return
 
-        if self.recurse_compare(ListComparator(HostComparator, g1.hosts, g2.hosts)) is False:
+        hosts_comparator = ListComparator(HostComparator, g1.hosts, g2.hosts)
+        if self.recurse_compare(hosts_comparator) is False:
             return
 
-        if self.recurse_compare(ListComparator(HostComparator, g1.child_groups, g2.child_groups)) is False:
+        groups_comparator = ListComparator(
+                HostComparator, g1.child_groups, g2.child_groups)
+        if self.recurse_compare(groups_comparator) is False:
             return
         self.result = self.eq
         return
+
 
 class HostComparator(BaseComparator):
     def _compare(self):
         h1 = self._obj1
         h2 = self._obj2
         if h1.name != h2.name:
-            self.diff = (h1.name,h2.name)
+            self.diff = (h1.name, h2.name)
             self.path = ["name"]
             if h1.name < h2.name:
                 self.result = self.lt
@@ -165,6 +192,7 @@ class HostComparator(BaseComparator):
         self.path = [h1.name]
         self.recurse_compare(VarsComparator(dict(h1.vars), dict(h2.vars)))
         return
+
 
 class VarsComparator(BaseComparator):
     def _compare(self):
@@ -180,4 +208,3 @@ class VarsComparator(BaseComparator):
             else:
                 self.result = self.gt
         return
-
