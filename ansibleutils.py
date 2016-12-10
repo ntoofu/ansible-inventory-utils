@@ -170,7 +170,7 @@ class GroupComparator(BaseComparator):
             return
 
         groups_comparator = ListComparator(
-                HostComparator, g1.child_groups, g2.child_groups)
+                GroupComparator, g1.child_groups, g2.child_groups)
         if self.recurse_compare(groups_comparator) is False:
             return
         self.result = self.eq
