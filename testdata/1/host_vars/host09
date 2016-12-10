@@ -1,0 +1,23 @@
+---
+var1: 101
+var2:
+  - hoge1
+  - fuga1
+var3:
+  a: 11
+  b: 21
+  c: 31
+var4:
+  - name: dict001
+    value: aaaaaa
+    list:
+    - 10
+    - 20
+    - 30
+  - name: dict002
+    value: bbbbbb
+    list:
+    - 40
+    - 50
+    - 60
+var5: false

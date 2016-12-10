@@ -1,0 +1,23 @@
+---
+var1: 2
+var2:
+  - foo
+  - bar
+var3:
+  a: 2
+  b: 3
+  c: 4
+var4:
+  - name: dict01
+    value: aaaa
+    list:
+    - a
+    - b
+    - c
+  - name: dict02
+    value: bbbb
+    list:
+    - A
+    - B
+    - C
+var5: false
